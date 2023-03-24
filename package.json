@@ -1,7 +1,7 @@
 {
   "name": "tsc-compiler",
-  "version": "1.0.5",
-  "description": "A compiler for typescrip, use it, when allowImportingTsExtensions is true!",
+  "version": "1.0.7",
+  "description": "A compiler for typescript!",
   "main": "bin/index.js",
   "bin": "bin/index.js",
   "scripts": {},
@@ -9,8 +9,13 @@
     "typescript",
     "compiler"
   ],
-  "author": "DanielJge",
-  "license": "ISC",
+  "author": "DanielJge <danielg2964@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HeVyBlack/tsc-compiler"
+  },
+  "homepage": "https://github.com/HeVyBlack/tsc-compiler#readme",
+  "license": "MIT",
   "dependencies": {
     "@swc/core": "1.3.42",
     "chokidar": "3.5.3"
