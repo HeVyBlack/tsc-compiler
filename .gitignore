@@ -1,3 +1,6 @@
 node_modules
 .npmignore
 pnpm-lock.yaml
+bin
+build
+.swcrc

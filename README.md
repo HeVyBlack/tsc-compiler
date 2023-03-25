@@ -11,5 +11,6 @@ By default SWC scan your root folder, and search the .swcrc file, so, configure 
 |flag|what it do |
 |--|--|
 | --copy-files | Copy no .ts files |
+| --watch | WatchZ
 
-A reason why you wanna use this, is: When you are using **allowImportTsExtensions** in your **tsconfig.json**. This compiler take the **.ts** files, compile it, and change the **.ts** to **.js** in the import statement.
+A reason why you wanna use this, is: When you are using **allowImportTsExtensions** in your **tsconfig.json**. This compiler take the **.ts** files, compile it, and change the **.ts** to **.js** in the imports  statements.
