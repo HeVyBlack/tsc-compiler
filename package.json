@@ -1,6 +1,6 @@
 {
   "name": "tsc-compiler",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A compiler for typescript!",
   "main": "bin/index.js",
   "bin": "bin/index.js",
