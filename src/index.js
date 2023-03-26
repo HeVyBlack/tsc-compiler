@@ -28,22 +28,26 @@ const main = () => {
 };
 
 function timeToWatch() {
-  console.clear();
   const src = config.srcDir;
   const watcher = chokidar.watch(src);
   watcher.on("add", function (fpath) {
     handleFileEvent(fpath);
   });
   watcher
-    .on("change", function (fpath) {
+    .on("change", async function (fpath) {
+      console.clear();
       handleFileEvent(fpath);
       if (config.argvs["--watch"]) console.log("\nWatching for changes...");
+      if (config.argvs["--run"]) {
+        await config.resetChildProcess();
+      }
     })
-    .on("ready", function () {
-      if (!config.argvs["--watch"]) {
-        console.log("Exit...");
-        process.exit(0);
-      } else console.log("\nWatching for changes...");
+    .on("ready", async () => {
+      if (!config.argvs["--watch"]) await watcher.close();
+
+      if (config.argvs["--run"]) await config.initChildProcess();
+
+      console.log("\nWatching for changes...");
     });
 }
 

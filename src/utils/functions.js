@@ -64,7 +64,6 @@ export function handleFileEvent(filePath) {
       }
       fs.writeFileSync(changeExtension(newFilePath, ".js"), newCode);
     } catch (e) {
-      console.clear();
       console.error(e.message || e);
       if (!config.argvs["--watch"]) process.exit(1);
     }
