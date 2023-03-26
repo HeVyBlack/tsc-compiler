@@ -2,6 +2,7 @@ import fs from "fs";
 import { basename, dirname, extname, join } from "path";
 import { config } from "..";
 import * as swc from "@swc/core";
+
 export function isADir(dpath) {
   const exists = fs.existsSync(dpath);
   const isDir = fs.lstatSync(dpath).isDirectory();
@@ -69,5 +70,18 @@ export function handleFileEvent(filePath) {
     }
   } else if (config.argvs["--copy-files"]) {
     fs.copyFileSync(filePath, newFilePath);
+  }
+}
+
+export function getExitCode() {
+  if (process.platform === "win32") {
+    return "SIGBREAK";
+  } else if (process.platform === "darwin") {
+    return "SIGINT";
+  } else if (process.platform === "linux") {
+    return "SIGINT";
+  } else {
+    throw new Error("The OS is not supported!");
+    process.exit(1);
   }
 }

@@ -1,18 +1,19 @@
 import path from "path";
-import { isADir } from "./functions";
+import { getExitCode, isADir } from "./functions";
 import { spawn } from "child_process";
 export class Config {
   srcDir;
   srcName;
   outDir;
   outName;
-
+  exitCode;
   child = null;
 
   argvs = {
     "--copy-files": false,
     "--watch": false,
     "--run": null,
+    "--clean-on-exit": false,
   };
 
   argvsToSet = {
@@ -46,9 +47,14 @@ export class Config {
 
       this.argvs["--run"] = pathFile;
     },
+    "--clean-on-exit": () => {
+      this.argvs["--clean-on-exit"] = true;
+    },
   };
 
-  constructor() {}
+  constructor() {
+    this.exitCode = getExitCode();
+  }
 
   setAndCheckSource(src) {
     this.srcDir = path.resolve(process.cwd(), src);

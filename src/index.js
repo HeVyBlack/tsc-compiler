@@ -3,6 +3,7 @@ import { handleFileEvent, isADir, isDirEmpy } from "./utils/functions";
 import path, { basename } from "path";
 import chokidar from "chokidar";
 import { Config } from "./utils/config";
+import fs from "fs";
 
 export const config = new Config();
 
@@ -43,12 +44,44 @@ function timeToWatch() {
       }
     })
     .on("ready", async () => {
-      if (!config.argvs["--watch"]) await watcher.close();
+      if (!config.argvs["--watch"]) {
+        console.log("Compilation complete!");
+        await watcher.close();
+      } else console.log("\nWatching for changes...");
 
       if (config.argvs["--run"]) await config.initChildProcess();
-
-      console.log("\nWatching for changes...");
     });
 }
+
+process.on("exit", async () => {
+  if (config.argvs["--clean-on-exit"]) {
+    fs.rmSync(config.outDir, { recursive: true }, (e) => {
+      if (e) {
+        console.error(e);
+        process.exit(1);
+      } else {
+        console.log("Clean exit complete!");
+        process.exit(0);
+      }
+    });
+  }
+  process.exit(0);
+});
+
+process.on(config.exitCode, () => {
+  if (config.argvs["--clean-on-exit"]) {
+    fs.rmSync(config.outDir, { recursive: true }, (e) => {
+      console.log("HOLA");
+      if (e) {
+        console.error(e);
+        process.exit(1);
+      } else {
+        console.log("Clean exit complete!");
+        process.exit(0);
+      }
+    });
+  }
+  process.exit(0);
+});
 
 main();
