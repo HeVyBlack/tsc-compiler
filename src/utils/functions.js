@@ -55,7 +55,7 @@ export function handleFileEvent(filePath) {
     }
     try {
       const { code, map } = compileFile(filePath);
-      let newCode = code.replace(/.ts";/, '.js";');
+      let newCode = code.replace(/.ts";/g, '.js";');
 
       if (map) {
         const mapName = fileName.split(extFile)[0].concat(".js.map");
