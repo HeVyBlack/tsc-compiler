@@ -75,7 +75,7 @@ export function handleFileEvent(filePath) {
 
 export function getExitCode() {
   if (process.platform === "win32") {
-    return "SIGBREAK";
+    return "SIGINT";
   } else if (process.platform === "darwin") {
     return "SIGINT";
   } else if (process.platform === "linux") {
