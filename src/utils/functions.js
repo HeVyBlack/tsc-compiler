@@ -1,87 +1,145 @@
+import path from "path";
 import fs from "fs";
-import { basename, dirname, extname, join } from "path";
-import { config } from "..";
-import * as swc from "@swc/core";
+import isValidPath from "is-valid-path";
+import config from "./config";
+import { logger } from "./logger";
 
-export function isADir(dpath) {
-  const exists = fs.existsSync(dpath);
-  const isDir = fs.lstatSync(dpath).isDirectory();
-  return exists && isDir;
+export async function initArgv() {
+  if (process.argv.length === 2) {
+    logger.error("Source and Output directories are needed!");
+    process.exit(1);
+  }
+
+  const [, , src, out] = process.argv;
+
+  if (!src) {
+    logger.error("Source directorie is needed!");
+    process.exit(1);
+  }
+
+  if (!out) {
+    logger.error("Output directorie is needed!");
+    process.exit(1);
+  }
+
+  config.config.src = await checkSourceDir(src);
+  config.config.out = checkOutDir(out);
+
+  if (process.argv.length === 4) return;
+
+  for (let i = 4; i < process.argv.length; i++) {
+    if (process.argv[i] in setArgvs) {
+      const arg = process.argv[i];
+      if (arg in setArgvs) {
+        config.config[arg] = setArgvs[arg]();
+      }
+    }
+  }
+
+  return;
 }
 
-export function isDirEmpy(dpath) {
-  const files = fs.readdirSync(dpath);
-  const res = files;
-  console.log(res);
+async function checkSourceDir(src) {
+  const srcDir = path.resolve(src);
+  // Check if exists
+  await fs.promises.stat(srcDir).catch((e) => {
+    logger.error("Source file doesn't exists!");
+    process.exit(1);
+  });
+
+  return {
+    path: srcDir,
+    basename: path.basename(srcDir),
+  };
 }
 
-export function createDir(dpath) {
-  if (!fs.existsSync(dpath)) fs.mkdirSync(dpath);
+function checkOutDir(out) {
+  if (!isValidPath(out)) {
+    logger.error("Provied a valid Out directory!");
+    process.exit(1);
+  }
+  const outDir = path.resolve(out);
+  return {
+    path: outDir,
+    basename: path.basename(outDir),
+  };
 }
 
-export function changeExtension(fpath, extension) {
-  const baseName = basename(fpath, extname(fpath));
-  return join(dirname(fpath), baseName + extension);
-}
+const setArgvs = {
+  "--copy-files"() {
+    return true;
+  },
+  "--watch"() {
+    return true;
+  },
+  "--run"() {
+    const fileToRun = process.argv[process.argv.indexOf("--run") + 1];
+    if (!isValidPath(fileToRun)) {
+      logger.error("Provied a valid path for file!");
+      process.exit(1);
+    }
 
-export function newPath(fpath) {
-  const srcName = config.srcName;
-  const outName = config.outName;
-  const pathSplit = fpath.split(process.cwd())[1];
+    if (!fileToRun) {
+      logger.error("File to run is needed!");
+      process.exit(1);
+    }
+
+    const filePath = path.resolve(fileToRun);
+
+    const fileExt = path.extname(filePath);
+
+    if (!fileExt || fileExt !== ".js") {
+      logger.error("File to run must be a .js file!");
+      process.exit(1);
+    }
+
+    return filePath;
+  },
+  "--clean-on-exit"() {
+    ["SIGINT", "SIGTERM"].forEach((signal) => {
+      process.on(signal, async () => {
+        logger.error("\nExiting...");
+        await fs.promises.rm(config.config.out.path, { recursive: true });
+        process.exit(0);
+      });
+    });
+    return true;
+  },
+  "--no-empy-files"() {
+    return true;
+  },
+};
+
+export function newPath(p) {
+  const srcName = config.config.src.basename;
+  const outName = config.config.out.basename;
+
+  const pathSplit = p.split(process.cwd())[1];
   const pathReplace = pathSplit.replace(srcName, outName);
-  const pathNew = join(process.cwd(), pathReplace);
+  const pathNew = path.join(process.cwd(), pathReplace);
+
   return pathNew;
 }
 
-export function compileFile(filePath) {
-  return swc.transformFileSync(filePath);
+export async function createDir(p) {
+  fs.promises.mkdir(p).catch((e) => {
+    if (e.code === "EEXIST") return;
+    logger.error(e);
+    process.exit(1);
+  });
 }
 
-export function handleFileEvent(filePath) {
-  const newFilePath = newPath(filePath);
-  const fileName = basename(filePath);
-  const extFile = extname(filePath);
-  const newDirPath = newPath(dirname(filePath));
-
-  // Create Dir
-  createDir(newDirPath);
-
-  // Compile file
-  if (extFile === ".ts" || extFile === ".js") {
-    if (extFile === ".js") {
-      // Check if a .ts file exists with the same name
-      const aux = changeExtension(filePath, ".ts");
-      if (fs.existsSync(aux)) return;
-    }
-    try {
-      const { code, map } = compileFile(filePath);
-      let newCode = code.replace(/.ts";/g, '.js";');
-
-      if (map) {
-        const mapName = fileName.split(extFile)[0].concat(".js.map");
-        const mapPath = join(newDirPath, mapName);
-        fs.writeFileSync(mapPath, map);
-        newCode += `\n//# sourceMappingURL=${mapName}`;
-      }
-      fs.writeFileSync(changeExtension(newFilePath, ".js"), newCode);
-    } catch (e) {
-      console.error(e.message || e);
-      if (!config.argvs["--watch"]) process.exit(1);
-    }
-  } else if (config.argvs["--copy-files"]) {
-    fs.copyFileSync(filePath, newFilePath);
-  }
-}
-
-export function getExitCode() {
-  if (process.platform === "win32") {
-    return "SIGINT";
-  } else if (process.platform === "darwin") {
-    return "SIGINT";
-  } else if (process.platform === "linux") {
-    return "SIGINT";
-  } else {
-    throw new Error("The OS is not supported!");
+export async function createDirSync(p) {
+  try {
+    fs.mkdirSync(p);
+  } catch (e) {
+    if (e.code === "EEXIST") return;
+    logger.error(e);
     process.exit(1);
   }
+}
+
+export function changeExtension(file, ext) {
+  const baseName = path.basename(file, path.extname(file));
+  return path.join(path.dirname(file), baseName + ext);
 }

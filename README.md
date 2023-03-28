@@ -14,5 +14,6 @@ By default SWC scan your root folder, and search the .swcrc file, so, configure 
 | --watch | Watch for changes |
 | --run [file to run] | Run .js files |
 | --clean-on-exit | Remove out folder on exit |
+| --no-empy-files | Avoid empty .ts files |
 
 A reason why you wanna use this, is: When you are using **allowImportTsExtensions** in your **tsconfig.json**. This compiler take the **.ts** files, compile it, and change the **.ts** to **.js** in the imports  statements.

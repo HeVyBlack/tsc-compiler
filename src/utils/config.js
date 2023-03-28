@@ -1,103 +1,48 @@
-import path from "path";
-import { getExitCode, isADir } from "./functions";
 import { spawn } from "child_process";
-export class Config {
-  srcDir;
-  srcName;
-  outDir;
-  outName;
-  exitCode;
-  child = null;
+import { logger } from "./logger";
+let fileError = false;
 
-  argvs = {
-    "--copy-files": false,
-    "--watch": false,
-    "--run": null,
-    "--clean-on-exit": false,
+let child = null;
+class Config {
+  config = {
+    src: { path: null, basename: null },
+    out: { path: null, basename: null },
   };
-
-  argvsToSet = {
-    "--copy-files": () => {
-      this.argvs["--copy-files"] = true;
-    },
-    "--watch": () => {
-      this.argvs["--watch"] = true;
-    },
-    "--run": async (arg) => {
-      const fileToRun = arg[arg.indexOf("--run") + 1];
-
-      if (!fileToRun) {
-        console.error("File to run is required!");
-        process.exit(1);
-      }
-
-      const pathFile = path.resolve(process.cwd(), fileToRun);
-
-      const fileExt = path.extname(pathFile);
-
-      if (!fileExt || fileExt !== ".js") {
-        console.error("File to run must be a .js file!");
-        process.exit(1);
-      }
-
-      if (!fileToRun) {
-        console.error("Please, set a file to run!");
-        process.exit(1);
-      }
-
-      this.argvs["--run"] = pathFile;
-    },
-    "--clean-on-exit": () => {
-      this.argvs["--clean-on-exit"] = true;
-    },
-  };
-
-  constructor() {
-    this.exitCode = getExitCode();
+  setCompError(bool) {
+    fileError = bool;
   }
-
-  setAndCheckSource(src) {
-    this.srcDir = path.resolve(process.cwd(), src);
-    if (!isADir(this.srcDir)) {
-      console.error("Source must be a valid directory!");
-      process.exit(1);
+  getCompError() {
+    return fileError;
+  }
+  async initChild() {
+    if (!this.config["--run"]) return;
+    child = spawn("node", [this.config["--run"]], {
+      stdio: "inherit",
+    });
+    child.on("spawn", (data) => {
+      logger.info("The process is initialising...");
+    });
+    child.on("message", (data) => {
+      logger.info(data);
+    });
+    child.on("error", (data) => {
+      logger.error(data);
+    });
+  }
+  async resetChild() {
+    if (!child) {
+      return;
+    } else {
+      child.kill();
+      await this.initChild();
     }
-    this.srcName = path.basename(this.srcDir);
   }
-
-  setOut(out) {
-    this.outDir = path.resolve(process.cwd(), out);
-    this.outName = path.basename(this.outDir);
-  }
-
-  setArgvs(arg) {
-    arg.forEach((a) => {
-      if (a in this.argvs) {
-        this.argvsToSet[a](arg);
-      }
-    });
-  }
-
-  getArgvs() {
-    return this.argvs;
-  }
-
-  async initChildProcess() {
-    this.child = spawn("node", [this.argvs["--run"]]);
-
-    this.child.stdout.on("data", (data) => {
-      console.log(`\n${data}`);
-    });
-
-    this.child.stderr.on("data", (data) => {
-      console.error(`\n${data}`);
-    });
-  }
-
-  async resetChildProcess() {
-    if (!this.child) return;
-    await this.child.kill();
-    this.child = null;
-    await this.initChildProcess();
+  killChild() {
+    if (!child) return;
+    child.kill();
   }
 }
+
+const config = new Config();
+
+export default config;
