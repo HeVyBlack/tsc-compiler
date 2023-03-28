@@ -3,6 +3,56 @@ import fs from "fs";
 import isValidPath from "is-valid-path";
 import config from "./config";
 import { logger } from "./logger";
+import { readDefaultTsConfig } from "../libs/typescript";
+
+const setArgvs = {
+  "--copy-files"() {
+    return true;
+  },
+  "--watch"() {
+    return true;
+  },
+  "--run"() {
+    const fileToRun = process.argv[process.argv.indexOf("--run") + 1];
+    if (!isValidPath(fileToRun)) {
+      logger.error("Provied a valid path for file!");
+      process.exit(1);
+    }
+
+    if (!fileToRun) {
+      logger.error("File to run is needed!");
+      process.exit(1);
+    }
+
+    const filePath = path.resolve(fileToRun);
+
+    const fileExt = path.extname(filePath);
+
+    if (!fileExt || fileExt !== ".js") {
+      logger.error("File to run must be a .js file!");
+      process.exit(1);
+    }
+
+    return filePath;
+  },
+  "--clean-on-exit"() {
+    ["SIGINT", "SIGTERM"].forEach((signal) => {
+      process.on(signal, async () => {
+        logger.error("\nExiting...");
+        await fs.promises.rm(config.config.out.path, { recursive: true });
+        process.exit(0);
+      });
+    });
+    return true;
+  },
+  "--no-empy-files"() {
+    return true;
+  },
+  "--type-check"() {
+    config.setTsConfig(readDefaultTsConfig());
+    return true;
+  },
+};
 
 export async function initArgv() {
   if (process.argv.length === 2) {
@@ -64,51 +114,6 @@ function checkOutDir(out) {
     basename: path.basename(outDir),
   };
 }
-
-const setArgvs = {
-  "--copy-files"() {
-    return true;
-  },
-  "--watch"() {
-    return true;
-  },
-  "--run"() {
-    const fileToRun = process.argv[process.argv.indexOf("--run") + 1];
-    if (!isValidPath(fileToRun)) {
-      logger.error("Provied a valid path for file!");
-      process.exit(1);
-    }
-
-    if (!fileToRun) {
-      logger.error("File to run is needed!");
-      process.exit(1);
-    }
-
-    const filePath = path.resolve(fileToRun);
-
-    const fileExt = path.extname(filePath);
-
-    if (!fileExt || fileExt !== ".js") {
-      logger.error("File to run must be a .js file!");
-      process.exit(1);
-    }
-
-    return filePath;
-  },
-  "--clean-on-exit"() {
-    ["SIGINT", "SIGTERM"].forEach((signal) => {
-      process.on(signal, async () => {
-        logger.error("\nExiting...");
-        await fs.promises.rm(config.config.out.path, { recursive: true });
-        process.exit(0);
-      });
-    });
-    return true;
-  },
-  "--no-empy-files"() {
-    return true;
-  },
-};
 
 export function newPath(p) {
   const srcName = config.config.src.basename;

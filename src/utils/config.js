@@ -3,6 +3,9 @@ import { logger } from "./logger";
 let fileError = false;
 
 let child = null;
+
+let tsConfig = null;
+
 class Config {
   config = {
     src: { path: null, basename: null },
@@ -16,6 +19,7 @@ class Config {
   }
   async initChild() {
     if (!this.config["--run"]) return;
+    console.clear();
     child = spawn("node", [this.config["--run"]], {
       stdio: "inherit",
     });
@@ -31,6 +35,7 @@ class Config {
   }
   async resetChild() {
     if (!child) {
+      await this.initChild();
       return;
     } else {
       child.kill();
@@ -40,6 +45,12 @@ class Config {
   killChild() {
     if (!child) return;
     child.kill();
+  }
+  setTsConfig(json) {
+    tsConfig = json;
+  }
+  getTsConfig() {
+    return tsConfig;
   }
 }
 

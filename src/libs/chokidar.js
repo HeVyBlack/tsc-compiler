@@ -13,12 +13,14 @@ export async function initWatcher() {
   });
 
   watcher.on("change", async (p) => {
+    console.clear();
     await handleFileCompilation(p, "change");
+    if (!config.getCompError()) logger.info("Watching for changes...");
   });
 
   watcher.on("ready", async () => {
     if (config.getCompError()) return;
-    if (config.config["--watch"]) logger.info("Watching...");
+    if (config.config["--watch"]) logger.info("Watching for changes...");
     if (config.config["--run"]) await config.initChild();
   });
 }

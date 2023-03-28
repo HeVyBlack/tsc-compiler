@@ -1,13 +1,10 @@
 import path from "path";
-import {
-  changeExtension,
-  createDirSync,
-  newPath,
-} from "../utils/functions";
+import { changeExtension, createDirSync, newPath } from "../utils/functions";
 import fs from "fs";
 import config from "../utils/config";
 import { logger } from "../utils/logger";
 import { transformFileSync } from "@swc/core";
+import { typeCheck } from "./typescript";
 
 export async function handleFileCompilation(p, event) {
   const extFile = path.extname(p);
@@ -26,6 +23,14 @@ export async function handleFileCompilation(p, event) {
     }
     return await fs.promises.copyFile(p, newFilePath);
   }
+
+  if (config.config["--type-check"])
+    if (!(await typeCheck([p], config.getTsConfig()))) return;
+
+  await compileFile({ p, event, newFilePath, fileName });
+}
+
+async function compileFile({ p, event, newFilePath, fileName }) {
   try {
     const { code, map } = transformFileSync(p);
 
@@ -47,12 +52,13 @@ export async function handleFileCompilation(p, event) {
     await fs.promises.writeFile(newFilePath, newCode);
     config.setCompError(false);
 
-    console.clear();
     if (event !== "add") config.resetChild();
+
+    return true;
   } catch (e) {
-    console.log(e);
     config.setCompError(true);
     logger.error(e.message || e);
     config.killChild();
+    return false;
   }
 }
