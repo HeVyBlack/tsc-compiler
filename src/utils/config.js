@@ -50,9 +50,9 @@ class Config {
       await this.initChild();
     }
   }
-  killChild() {
+  async killChild() {
     if (!child) return;
-    child.kill();
+    await child.kill();
   }
   setTsConfig(json) {
     tsConfig = json;

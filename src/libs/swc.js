@@ -58,7 +58,7 @@ async function compileFile({ p, event, newFilePath, fileName }) {
   } catch (e) {
     config.setCompError(true);
     logger.error(e.message || e);
-    config.killChild();
+    await config.killChild();
     return false;
   }
 }

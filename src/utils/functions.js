@@ -38,7 +38,6 @@ const setArgvs = {
   "--clean-on-exit"() {
     ["SIGINT", "SIGTERM"].forEach((signal) => {
       process.on(signal, async () => {
-        logger.error("\nExiting...");
         await fs.promises.rm(config.config.out.path, { recursive: true });
         process.exit(0);
       });
