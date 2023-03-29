@@ -5,3 +5,4 @@ bin
 build
 .swcrc
 package-lock.json
+tsconfig.json

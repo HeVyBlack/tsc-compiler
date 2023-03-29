@@ -48,8 +48,11 @@ const setArgvs = {
   "--no-empy-files"() {
     return true;
   },
-  "--type-check"() {
-    config.setTsConfig(readDefaultTsConfig());
+  async "--type-check"() {
+    config.setTsConfig(await readDefaultTsConfig());
+    return true;
+  },
+  "--no-tsconfig"() {
     return true;
   },
 };
@@ -81,7 +84,7 @@ export async function initArgv() {
     if (process.argv[i] in setArgvs) {
       const arg = process.argv[i];
       if (arg in setArgvs) {
-        config.config[arg] = setArgvs[arg]();
+        config.config[arg] = await setArgvs[arg]();
       }
     }
   }

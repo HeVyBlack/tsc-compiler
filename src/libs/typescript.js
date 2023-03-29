@@ -4,24 +4,41 @@ import path from "path";
 import { logger } from "../utils/logger";
 import config from "../utils/config";
 
-export function readDefaultTsConfig(
+export async function readDefaultTsConfig(
   tsConfigPath = path.join(process.cwd(), "tsconfig.json")
 ) {
-  let compilerOptions = {
-    target: ts.ScriptTarget.ES2016,
-    module: ts.ModuleKind.CommonJS,
-    moduleResolution: ts.ModuleResolutionKind.Node16,
-    sourceMap: true,
-    esModuleInterop: true,
+  const baseCompilerOptions = {
+    target: "ES2022",
+    module: "NodeNext",
+    moduleResolution: "NodeNext",
+    allowImportingTsExtensions: true,
+    noEmit: true,
+    strict: true,
+    experimentalDecorators: true,
+    emitDecoratorMetadata: true,
+    strictPropertyInitialization: false,
   };
 
+  const { options } = ts.convertCompilerOptionsFromJson(
+    baseCompilerOptions,
+    process.cwd()
+  );
+
+  let compilerOptions = options;
+
   if (!tsConfigPath) {
-    return compilerOptions;
+    return baseCompilerOptions;
   }
 
   const fullTsConfigPath = path.resolve(tsConfigPath);
 
   if (!fs.existsSync(fullTsConfigPath)) {
+    if (!process.argv.includes("--no-tsconfig"))
+      await fs.promises.writeFile(
+        fullTsConfigPath,
+        JSON.stringify({ compilerOptions: baseCompilerOptions })
+      );
+
     return compilerOptions;
   }
 

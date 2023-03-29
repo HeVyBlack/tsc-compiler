@@ -6,11 +6,19 @@ let child = null;
 
 let tsConfig = null;
 
+let swcrc = null;
+
 class Config {
   config = {
     src: { path: null, basename: null },
     out: { path: null, basename: null },
   };
+  setSwcrc(options) {
+    swcrc = options;
+  }
+  getSwcrc() {
+    return swcrc;
+  }
   setCompError(bool) {
     fileError = bool;
   }

@@ -32,7 +32,7 @@ export async function handleFileCompilation(p, event) {
 
 async function compileFile({ p, event, newFilePath, fileName }) {
   try {
-    const { code, map } = transformFileSync(p);
+    const { code, map } = transformFileSync(p, config.getSwcrc());
 
     if (!code) {
       if (config.config["--no-empy-files"] && event !== "change") return;
@@ -60,5 +60,31 @@ async function compileFile({ p, event, newFilePath, fileName }) {
     logger.error(e.message || e);
     config.killChild();
     return false;
+  }
+}
+
+export async function findSwcrc() {
+  let swcrcOptions = {
+    jsc: {
+      parser: {
+        syntax: "typescript",
+        tsx: false,
+        decorators: true,
+      },
+      target: "esnext",
+      transform: {
+        decoratorMetadata: true,
+      },
+    },
+    module: {
+      type: "es6",
+    },
+  };
+  let swcrcDir = path.join(process.cwd(), ".swcrc");
+  try {
+    let swcrcContent = (await fs.promises.readFile(swcrcDir)).toString();
+    return JSON.parse(swcrcContent);
+  } catch (e) {
+    return swcrcOptions;
   }
 }
