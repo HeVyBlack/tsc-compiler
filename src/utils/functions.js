@@ -36,12 +36,6 @@ const setArgvs = {
     return filePath;
   },
   "--clean-on-exit"() {
-    ["SIGINT", "SIGTERM"].forEach((signal) => {
-      process.on(signal, async () => {
-        await fs.promises.rm(config.config.out.path, { recursive: true });
-        process.exit(0);
-      });
-    });
     return true;
   },
   "--no-empy-files"() {
